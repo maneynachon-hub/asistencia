@@ -10,9 +10,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Asistencia">
 <link rel="manifest" href="manifest.json">
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
   :root {
     --bg: #0f0f13;
@@ -448,22 +445,16 @@
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 <script>
 // ─────────────────────────────────────────────
 // DATA LAYER
 // ─────────────────────────────────────────────
-// ── FIREBASE CONFIG ──
-const firebaseConfig = {
-  apiKey: "AIzaSyA9iOyveMQA1AHH3he3KC_cJGYHCIbAvFs",
-  authDomain: "arepa-smash-lovers.firebaseapp.com",
-  databaseURL: "https://arepa-smash-lovers-default-rtdb.firebaseio.com",
-  projectId: "arepa-smash-lovers",
-  storageBucket: "arepa-smash-lovers.firebasestorage.app",
-  messagingSenderId: "499120113295",
-  appId: "1:499120113295:web:51f66b98a13668d6fcd2fa"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+// ── FIREBASE CONFIG (se inicializa en window.onload) ──
+let db = null;
 
 // ── CACHE LOCAL (para que la UI funcione sin esperar red) ──
 let _employees = [];
@@ -1321,24 +1312,41 @@ async function clearAllData() {
 // INIT
 // ─────────────────────────────────────────────
 // Indicador de conexión en tiempo real
-firebase.database().ref('.info/connected').on('value', snap => {
-  const online = snap.val() === true;
-  const dot = document.getElementById('conn-dot');
-  const label = document.getElementById('conn-label');
-  if (dot && label) {
-    dot.style.background = online ? '#34d399' : '#f87171';
-    label.textContent = online ? 'En línea' : 'Sin conexión';
-  }
+window.addEventListener('load', function() {
+  // Inicializar Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyA9iOyveMQA1AHH3he3KC_cJGYHCIbAvFs",
+    authDomain: "arepa-smash-lovers.firebaseapp.com",
+    databaseURL: "https://arepa-smash-lovers-default-rtdb.firebaseio.com",
+    projectId: "arepa-smash-lovers",
+    storageBucket: "arepa-smash-lovers.firebasestorage.app",
+    messagingSenderId: "499120113295",
+    appId: "1:499120113295:web:51f66b98a13668d6fcd2fa"
+  };
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  db = firebase.database();
+
+  // Indicador de conexión
+  firebase.database().ref('.info/connected').on('value', snap => {
+    const online = snap.val() === true;
+    const dot = document.getElementById('conn-dot');
+    const label = document.getElementById('conn-label');
+    if (dot && label) {
+      dot.style.background = online ? '#34d399' : '#f87171';
+      label.textContent = online ? 'En línea' : 'Sin conexión';
+    }
+  });
+
+  // Inicializar app
+  initDefaults();
+
+  // Filtros de fecha por defecto
+  const now = new Date();
+  const todayStr = now.toLocaleDateString('en-CA');
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString('en-CA');
+  document.getElementById('att-date-from').value = firstDay;
+  document.getElementById('att-date-to').value = todayStr;
 });
-
-initDefaults();
-
-// Set default date filters
-const now = new Date();
-const todayStr = now.toLocaleDateString('en-CA');
-const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString('en-CA');
-document.getElementById('att-date-from').value = firstDay;
-document.getElementById('att-date-to').value = todayStr;
 </script>
 </body>
 </html>
