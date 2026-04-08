@@ -141,6 +141,7 @@
   .empty-state{text-align:center;padding:40px 20px;color:var(--text3)}
   .empty-state-icon{font-size:36px;margin-bottom:10px}
   .empty-state-text{font-size:14px}
+  html, body { overscroll-behavior-y: contain; }
   @media print{body *{visibility:hidden}#print-content,#print-content *{visibility:visible}#print-content{position:fixed;left:0;top:0;width:80mm;font-family:'Courier New',monospace;font-size:10pt}}
 </style>
 </head>
@@ -281,14 +282,17 @@
           <div class="setting-label">Tolerancia de entrada (minutos)</div>
           <div class="setting-sub">Minutos de gracia antes de marcar tarde</div>
         </div>
-        <input type="number" id="cfg-grace" class="form-input" style="width:80px" min="0" max="60" onchange="saveConfig()">
+        <input type="number" id="cfg-grace" class="form-input" style="width:80px" min="0" max="60">
       </div>
       <div class="setting-row">
         <div>
           <div class="setting-label">Amonestaci&oacute;n por no marcar (RD$)</div>
           <div class="setting-sub">Se aplica autom&aacute;ticamente si falta entrada o salida</div>
         </div>
-        <input type="number" id="cfg-sanction" class="form-input" style="width:100px" min="0" onchange="saveConfig()">
+        <input type="number" id="cfg-sanction" class="form-input" style="width:100px" min="0">
+      </div>
+      <div style="margin-top:16px">
+        <button class="btn btn-primary btn-sm" onclick="saveConfig()">Guardar configuraci&oacute;n</button>
       </div>
     </div>
     <div class="settings-section">
@@ -394,10 +398,16 @@ async function saveAttendance(arr) {
   await db.ref('attendance').set(arr);
 }
 async function saveConfig() {
-  _config.graceMins      = parseInt(document.getElementById('cfg-grace').value)      || _config.graceMins;
-  _config.sanctionAmount = parseFloat(document.getElementById('cfg-sanction').value) ?? _config.sanctionAmount;
-  await db.ref('config').set(_config);
-  showToast('Configuración guardada', 'success');
+  const graceVal    = parseInt(document.getElementById('cfg-grace').value);
+  const sanctionVal = parseFloat(document.getElementById('cfg-sanction').value);
+  if (!isNaN(graceVal))    _config.graceMins      = graceVal;
+  if (!isNaN(sanctionVal)) _config.sanctionAmount = sanctionVal;
+  if (db) {
+    await db.ref('config').set(_config);
+    showToast('Configuración guardada', 'success');
+  } else {
+    showToast('Error: sin conexión a Firebase', 'error');
+  }
 }
 
 // Escuchar cambios en tiempo real desde cualquier dispositivo
@@ -515,6 +525,7 @@ updateClock();
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  try { sessionStorage.setItem('activeScreen', id); } catch(e) {}
 }
 function switchTab(tabId, el) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -1457,6 +1468,12 @@ async function clearAllData() {
 // ─────────────────────────────────────────────
 // Indicador de conexión en tiempo real
 window.addEventListener('load', function() {
+  // Prevenir pull-to-refresh en móvil
+  document.addEventListener('touchmove', function(e) {
+    if (e.touches.length === 1 && window.scrollY === 0) {
+      e.preventDefault();
+    }
+  }, { passive: false });
   // Inicializar Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyA9iOyveMQA1AHH3he3KC_cJGYHCIbAvFs",
