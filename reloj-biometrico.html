@@ -398,15 +398,18 @@ async function saveAttendance(arr) {
   await db.ref('attendance').set(arr);
 }
 async function saveConfig() {
-  const graceVal    = parseInt(document.getElementById('cfg-grace').value);
-  const sanctionVal = parseFloat(document.getElementById('cfg-sanction').value);
-  if (!isNaN(graceVal))    _config.graceMins      = graceVal;
-  if (!isNaN(sanctionVal)) _config.sanctionAmount = sanctionVal;
-  if (db) {
+  const graceEl    = document.getElementById('cfg-grace');
+  const sanctionEl = document.getElementById('cfg-sanction');
+  const graceVal    = graceEl    ? parseInt(graceEl.value)       : NaN;
+  const sanctionVal = sanctionEl ? parseFloat(sanctionEl.value)  : NaN;
+  if (!isNaN(graceVal)    && graceVal >= 0)    _config.graceMins      = graceVal;
+  if (!isNaN(sanctionVal) && sanctionVal >= 0) _config.sanctionAmount = sanctionVal;
+  if (!db) { showToast('Sin conexión — reintenta', 'error'); return; }
+  try {
     await db.ref('config').set(_config);
-    showToast('Configuración guardada', 'success');
-  } else {
-    showToast('Error: sin conexión a Firebase', 'error');
+    showToast('✓ Configuración guardada', 'success');
+  } catch(e) {
+    showToast('Error al guardar: ' + e.message, 'error');
   }
 }
 
@@ -426,13 +429,10 @@ function startFirebaseListeners() {
   db.ref('config').on('value', snap => {
     if (snap.val()) {
       _config = snap.val();
-      const e = document.getElementById('cfg-entry');
-      if (e) {
-        e.value = _config.entryTime;
-        document.getElementById('cfg-exit').value = _config.exitTime;
-        document.getElementById('cfg-grace').value = _config.graceMins;
-        document.getElementById('cfg-workhours').value = _config.workHours || 12;
-      }
+      const graceEl    = document.getElementById('cfg-grace');
+      const sanctionEl = document.getElementById('cfg-sanction');
+      if (graceEl)    graceEl.value    = _config.graceMins      || 10;
+      if (sanctionEl) sanctionEl.value = _config.sanctionAmount || 500;
     }
   });
 }
@@ -498,8 +498,10 @@ async function initDefaults() {
     });
   });
   const c = getConfig();
-  document.getElementById('cfg-grace').value    = c.graceMins      || 10;
-  document.getElementById('cfg-sanction').value = c.sanctionAmount ?? 500;
+  const graceEl2    = document.getElementById('cfg-grace');
+  const sanctionEl2 = document.getElementById('cfg-sanction');
+  if (graceEl2)    graceEl2.value    = c.graceMins      || 10;
+  if (sanctionEl2) sanctionEl2.value = c.sanctionAmount || 500;
   document.getElementById('loading-overlay').style.display = 'none';
   _dbReady = true;
   // Verificar amonestaciones pendientes
