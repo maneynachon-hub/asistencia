@@ -10,185 +10,138 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Asistencia">
 <link rel="manifest" href="manifest.json">
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
   :root {
-    --bg: #0f0f13;
-    --bg2: #18181f;
-    --bg3: #22222c;
-    --card: #1e1e28;
-    --border: #2e2e3e;
-    --accent: #4f6ef7;
-    --accent2: #6ee7b7;
-    --danger: #f87171;
-    --warn: #fbbf24;
-    --text: #f0f0f5;
-    --text2: #9090a8;
-    --text3: #5a5a72;
-    --green: #34d399;
-    --red: #f87171;
-    --purple: #a78bfa;
-    --radius: 14px;
-    --radius-sm: 8px;
+    --bg:#0f0f13;--bg2:#18181f;--bg3:#22222c;--card:#1e1e28;--border:#2e2e3e;
+    --accent:#4f6ef7;--accent2:#6ee7b7;--danger:#f87171;--warn:#fbbf24;
+    --text:#f0f0f5;--text2:#9090a8;--text3:#5a5a72;--green:#34d399;--red:#f87171;
+    --purple:#a78bfa;--radius:14px;--radius-sm:8px;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; overflow-x: hidden; }
-  
-  /* ── SCREENS ── */
-  .screen { display: none; min-height: 100vh; }
-  .screen.active { display: flex; flex-direction: column; }
-
-  /* ── CLOCK SCREEN ── */
-  #screen-clock { background: var(--bg); align-items: center; justify-content: center; gap: 0; padding: 24px 16px; }
-  .clock-header { text-align: center; margin-bottom: 28px; }
-  .clock-logo { font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: var(--text3); margin-bottom: 8px; }
-  .clock-time { font-size: 52px; font-weight: 300; color: var(--text); letter-spacing: -2px; line-height: 1; }
-  .clock-date { font-size: 14px; color: var(--text2); margin-top: 6px; }
-
-  .employee-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 10px; width: 100%; max-width: 500px; margin-bottom: 24px; }
-  .emp-chip { background: var(--bg3); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 10px 6px; text-align: center; cursor: pointer; transition: all .2s; }
-  .emp-chip:hover, .emp-chip.selected { border-color: var(--accent); background: rgba(79,110,247,.12); }
-  .emp-chip .emp-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--bg2); margin: 0 auto 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 2px solid var(--border); }
-  .emp-chip .emp-avatar img { width: 100%; height: 100%; object-fit: cover; }
-  .emp-chip .emp-name { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .emp-chip .emp-status { font-size: 10px; margin-top: 3px; }
-  .emp-chip .emp-status.in { color: var(--green); }
-  .emp-chip .emp-status.out { color: var(--text3); }
-
-  .pin-section { width: 100%; max-width: 340px; }
-  .pin-label { font-size: 13px; color: var(--text2); text-align: center; margin-bottom: 12px; }
-  .pin-display { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
-  .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border); transition: all .15s; }
-  .pin-dot.filled { background: var(--accent); border-color: var(--accent); transform: scale(1.15); }
-  .pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-  .pin-btn { background: var(--bg3); border: 1.5px solid var(--border); border-radius: var(--radius-sm); height: 58px; font-size: 22px; color: var(--text); cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; font-weight: 300; }
-  .pin-btn:active { transform: scale(.93); background: var(--bg2); }
-  .pin-btn.del { font-size: 16px; color: var(--text2); }
-  .pin-btn.ok { background: var(--accent); border-color: var(--accent); color: #fff; font-size: 14px; font-weight: 600; letter-spacing: .5px; }
-  .pin-btn.ok:active { background: #3a59e0; }
-
-  /* Camera modal */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.85); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
-  .modal-overlay.hidden { display: none; }
-  .modal-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 24px; width: 100%; max-width: 380px; text-align: center; }
-  .modal-title { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
-  .modal-sub { font-size: 13px; color: var(--text2); margin-bottom: 18px; }
-  .camera-frame { width: 200px; height: 200px; border-radius: 50%; overflow: hidden; margin: 0 auto 18px; border: 3px solid var(--accent); position: relative; background: var(--bg); }
-  .camera-frame video, .camera-frame canvas { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
-  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 12px 22px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; border: none; }
-  .btn-primary { background: var(--accent); color: #fff; }
-  .btn-primary:active { background: #3a59e0; transform: scale(.97); }
-  .btn-secondary { background: var(--bg3); color: var(--text); border: 1.5px solid var(--border); }
-  .btn-danger { background: rgba(248,113,113,.15); color: var(--danger); border: 1.5px solid rgba(248,113,113,.3); }
-  .btn-sm { padding: 8px 14px; font-size: 13px; }
-  .modal-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-
-  .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--bg3); border: 1px solid var(--border); border-radius: 100px; padding: 12px 24px; font-size: 14px; z-index: 200; opacity: 0; transition: opacity .3s; pointer-events: none; white-space: nowrap; }
-  .toast.show { opacity: 1; }
-  .toast.success { border-color: var(--green); color: var(--green); }
-  .toast.error { border-color: var(--danger); color: var(--danger); }
-
-  /* ── ADMIN SCREEN ── */
-  #screen-admin { background: var(--bg); }
-  .admin-nav { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--border); background: var(--bg2); }
-  .admin-nav-title { font-size: 16px; font-weight: 600; flex: 1; }
-  .tab-bar { display: flex; gap: 4px; padding: 12px 20px 0; border-bottom: 1px solid var(--border); overflow-x: auto; }
-  .tab { padding: 9px 18px; font-size: 13px; color: var(--text2); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all .2s; }
-  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-  .tab-content { display: none; padding: 20px; overflow-y: auto; flex: 1; }
-  .tab-content.active { display: block; }
-
-  /* Employees tab */
-  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-  .section-title { font-size: 15px; font-weight: 600; }
-  .emp-row { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; }
-  .emp-row-top { display: flex; align-items: center; gap: 12px; }
-  .emp-row-avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--bg3); overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; border: 2px solid var(--border); }
-  .emp-row-avatar img { width: 100%; height: 100%; object-fit: cover; }
-  .emp-row-info { flex: 1; min-width: 0; }
-  .emp-row-name { font-size: 15px; font-weight: 600; }
-  .emp-row-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
-  .emp-row-actions { display: flex; gap: 8px; }
-  .emp-row-details { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); display: none; }
-  .emp-row-details.open { display: block; }
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .form-group { display: flex; flex-direction: column; gap: 5px; }
-  .form-group label { font-size: 12px; color: var(--text2); }
-  .form-input { background: var(--bg3); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 9px 12px; color: var(--text); font-size: 14px; width: 100%; outline: none; transition: border-color .2s; }
-  .form-input:focus { border-color: var(--accent); }
-  select.form-input option { background: var(--bg3); }
-
-  /* Attendance tab */
-  .att-filters { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-  .att-filters select, .att-filters input { background: var(--bg3); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 8px 12px; color: var(--text); font-size: 13px; outline: none; }
-  .att-table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { text-align: left; padding: 10px 12px; color: var(--text3); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid var(--border); }
-  td { padding: 11px 12px; border-bottom: 1px solid rgba(255,255,255,.04); }
-  tr:hover td { background: var(--bg3); }
-  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 100px; font-size: 11px; font-weight: 600; }
-  .badge-green { background: rgba(52,211,153,.12); color: var(--green); }
-  .badge-red { background: rgba(248,113,113,.12); color: var(--danger); }
-  .badge-warn { background: rgba(251,191,36,.12); color: var(--warn); }
-  .badge-gray { background: rgba(144,144,168,.1); color: var(--text2); }
-
-  /* Payroll tab */
-  .payroll-period { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
-  .payroll-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 12px; }
-  .payroll-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-  .payroll-card-name { font-size: 16px; font-weight: 600; }
-  .payroll-card-salary { font-size: 14px; color: var(--text2); }
-  .payroll-breakdown { font-size: 13px; }
-  .payroll-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.04); }
-  .payroll-row:last-child { border-bottom: none; font-weight: 600; font-size: 14px; margin-top: 4px; }
-  .payroll-row .deduction { color: var(--danger); }
-  .payroll-discounts { margin-top: 10px; padding: 10px; background: var(--bg3); border-radius: var(--radius-sm); }
-  .payroll-discounts-title { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
-  .discount-item { display: flex; justify-content: space-between; font-size: 12px; color: var(--text2); padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,.03); }
-  .discount-item:last-child { border: none; }
-  .print-btn { display: flex; align-items: center; gap: 6px; padding: 10px 18px; background: var(--bg3); border: 1.5px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 13px; cursor: pointer; transition: all .2s; }
-  .print-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-  /* Settings tab */
-  .settings-section { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
-  .settings-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; font-size: 11px; }
-  .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.04); }
-  .setting-row:last-child { border: none; }
-  .setting-label { font-size: 14px; }
-  .setting-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
-
-  /* Login screen */
-  #screen-login { background: var(--bg); align-items: center; justify-content: center; padding: 32px 20px; }
-  .login-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px 28px; width: 100%; max-width: 360px; text-align: center; }
-  .login-logo { font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: var(--text3); margin-bottom: 6px; }
-  .login-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
-  .login-sub { font-size: 13px; color: var(--text2); margin-bottom: 28px; }
-  .login-input { background: var(--bg3); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 13px 16px; color: var(--text); font-size: 16px; width: 100%; outline: none; margin-bottom: 12px; }
-  .login-input:focus { border-color: var(--accent); }
-
-  /* ── PRINT PREVIEW ── */
-  #screen-print { background: var(--bg); }
-  .print-preview { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin: 20px; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.6; white-space: pre-wrap; color: var(--text); overflow-x: auto; }
-  .print-controls { display: flex; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-
-  .chip { display: inline-flex; align-items: center; padding: 4px 10px; background: var(--bg3); border: 1px solid var(--border); border-radius: 100px; font-size: 12px; color: var(--text2); }
-  .divider { height: 1px; background: var(--border); margin: 16px 0; }
-  .empty-state { text-align: center; padding: 40px 20px; color: var(--text3); }
-  .empty-state-icon { font-size: 36px; margin-bottom: 10px; }
-  .empty-state-text { font-size: 14px; }
-
-  #loading-overlay { position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px; }
-  .spinner { width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite; }
-  @keyframes spin { to { transform:rotate(360deg); } }
-  @media print {
-    body * { visibility: hidden; }
-    #print-content, #print-content * { visibility: visible; }
-    #print-content { position: fixed; left: 0; top: 0; width: 80mm; font-family: 'Courier New', monospace; font-size: 10pt; }
-  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
+  .screen{display:none;min-height:100vh}
+  .screen.active{display:flex;flex-direction:column}
+  #screen-clock{background:var(--bg);align-items:center;justify-content:center;gap:0;padding:24px 16px}
+  .clock-header{text-align:center;margin-bottom:28px}
+  .clock-logo{font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
+  .clock-time{font-size:52px;font-weight:300;color:var(--text);letter-spacing:-2px;line-height:1}
+  .clock-date{font-size:14px;color:var(--text2);margin-top:6px}
+  .employee-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:10px;width:100%;max-width:500px;margin-bottom:24px}
+  .emp-chip{background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 6px;text-align:center;cursor:pointer;transition:all .2s}
+  .emp-chip:hover,.emp-chip.selected{border-color:var(--accent);background:rgba(79,110,247,.12)}
+  .emp-chip .emp-avatar{width:44px;height:44px;border-radius:50%;background:var(--bg2);margin:0 auto 6px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid var(--border)}
+  .emp-chip .emp-avatar img{width:100%;height:100%;object-fit:cover}
+  .emp-chip .emp-name{font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .emp-chip .emp-status{font-size:10px;margin-top:3px}
+  .emp-chip .emp-status.in{color:var(--green)}
+  .emp-chip .emp-status.out{color:var(--text3)}
+  .pin-section{width:100%;max-width:340px}
+  .pin-label{font-size:13px;color:var(--text2);text-align:center;margin-bottom:12px}
+  .pin-display{display:flex;justify-content:center;gap:10px;margin-bottom:20px}
+  .pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--border);transition:all .15s}
+  .pin-dot.filled{background:var(--accent);border-color:var(--accent);transform:scale(1.15)}
+  .pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .pin-btn{background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius-sm);height:58px;font-size:22px;color:var(--text);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;font-weight:300}
+  .pin-btn:active{transform:scale(.93);background:var(--bg2)}
+  .pin-btn.del{font-size:16px;color:var(--text2)}
+  .pin-btn.ok{background:var(--accent);border-color:var(--accent);color:#fff;font-size:14px;font-weight:600;letter-spacing:.5px}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+  .modal-overlay.hidden{display:none}
+  .modal-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:380px;text-align:center}
+  .modal-title{font-size:18px;font-weight:600;margin-bottom:6px}
+  .modal-sub{font-size:13px;color:var(--text2);margin-bottom:18px}
+  .camera-frame{width:200px;height:200px;border-radius:50%;overflow:hidden;margin:0 auto 18px;border:3px solid var(--accent);position:relative;background:var(--bg)}
+  .camera-frame video,.camera-frame canvas{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 22px;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;border:none}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-secondary{background:var(--bg3);color:var(--text);border:1.5px solid var(--border)}
+  .btn-danger{background:rgba(248,113,113,.15);color:var(--danger);border:1.5px solid rgba(248,113,113,.3)}
+  .btn-sm{padding:8px 14px;font-size:13px}
+  .modal-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid var(--border);border-radius:100px;padding:12px 24px;font-size:14px;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+  .toast.show{opacity:1}
+  .toast.success{border-color:var(--green);color:var(--green)}
+  .toast.error{border-color:var(--danger);color:var(--danger)}
+  #screen-admin{background:var(--bg)}
+  .admin-nav{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);background:var(--bg2)}
+  .admin-nav-title{font-size:16px;font-weight:600;flex:1}
+  .tab-bar{display:flex;gap:4px;padding:12px 20px 0;border-bottom:1px solid var(--border);overflow-x:auto}
+  .tab{padding:9px 18px;font-size:13px;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .tab-content{display:none;padding:20px;overflow-y:auto;flex:1}
+  .tab-content.active{display:block}
+  .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .section-title{font-size:15px;font-weight:600}
+  .emp-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px}
+  .emp-row-top{display:flex;align-items:center;gap:12px}
+  .emp-row-avatar{width:48px;height:48px;border-radius:50%;background:var(--bg3);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;border:2px solid var(--border)}
+  .emp-row-avatar img{width:100%;height:100%;object-fit:cover}
+  .emp-row-info{flex:1;min-width:0}
+  .emp-row-name{font-size:15px;font-weight:600}
+  .emp-row-meta{font-size:12px;color:var(--text2);margin-top:2px}
+  .emp-row-actions{display:flex;gap:8px}
+  .emp-row-details{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+  .emp-row-details.open{display:block}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .form-group{display:flex;flex-direction:column;gap:5px}
+  .form-group label{font-size:12px;color:var(--text2)}
+  .form-input{background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text);font-size:14px;width:100%;outline:none;transition:border-color .2s}
+  .form-input:focus{border-color:var(--accent)}
+  .att-filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  .att-table-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;padding:10px 12px;color:var(--text3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+  td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.04)}
+  tr:hover td{background:var(--bg3)}
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:100px;font-size:11px;font-weight:600}
+  .badge-green{background:rgba(52,211,153,.12);color:var(--green)}
+  .badge-red{background:rgba(248,113,113,.12);color:var(--danger)}
+  .badge-warn{background:rgba(251,191,36,.12);color:var(--warn)}
+  .badge-gray{background:rgba(144,144,168,.1);color:var(--text2)}
+  .payroll-period{display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
+  .payroll-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:12px}
+  .payroll-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .payroll-card-name{font-size:16px;font-weight:600}
+  .payroll-card-salary{font-size:14px;color:var(--text2)}
+  .payroll-breakdown{font-size:13px}
+  .payroll-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+  .payroll-row:last-child{border-bottom:none;font-weight:600;font-size:14px;margin-top:4px}
+  .payroll-row .deduction{color:var(--danger)}
+  .payroll-discounts{margin-top:10px;padding:10px;background:var(--bg3);border-radius:var(--radius-sm)}
+  .payroll-discounts-title{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+  .discount-item{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);padding:4px 0;border-bottom:1px solid rgba(255,255,255,.03)}
+  .print-btn{display:flex;align-items:center;gap:6px;padding:10px 18px;background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;cursor:pointer;transition:all .2s}
+  .print-btn:hover{border-color:var(--accent);color:var(--accent)}
+  #screen-login{background:var(--bg);align-items:center;justify-content:center;padding:32px 20px}
+  .login-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px 28px;width:100%;max-width:360px;text-align:center}
+  .login-logo{font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+  .login-title{font-size:22px;font-weight:700;margin-bottom:4px}
+  .login-sub{font-size:13px;color:var(--text2);margin-bottom:28px}
+  .login-input{background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:13px 16px;color:var(--text);font-size:16px;width:100%;outline:none;margin-bottom:12px}
+  .login-input:focus{border-color:var(--accent)}
+  #screen-print{background:var(--bg)}
+  .print-preview{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin:20px;font-family:'Courier New',monospace;font-size:13px;line-height:1.6;white-space:pre-wrap;color:var(--text);overflow-x:auto}
+  .print-controls{display:flex;gap:10px;padding:16px 20px;border-bottom:1px solid var(--border)}
+  .settings-section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+  .settings-title{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;font-weight:600}
+  .setting-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+  .setting-row:last-child{border:none}
+  .setting-label{font-size:14px}
+  .setting-sub{font-size:12px;color:var(--text2);margin-top:2px}
+  #loading-overlay{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+  .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  ::-webkit-scrollbar{width:4px;height:4px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
+  .chip{display:inline-flex;align-items:center;padding:4px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:100px;font-size:12px;color:var(--text2)}
+  .empty-state{text-align:center;padding:40px 20px;color:var(--text3)}
+  .empty-state-icon{font-size:36px;margin-bottom:10px}
+  .empty-state-text{font-size:14px}
+  @media print{body *{visibility:hidden}#print-content,#print-content *{visibility:visible}#print-content{position:fixed;left:0;top:0;width:80mm;font-family:'Courier New',monospace;font-size:10pt}}
 </style>
 </head>
 <body>
@@ -199,23 +152,19 @@
   <div style="color:var(--text2);font-size:14px">Conectando...</div>
 </div>
 
-<!-- ══════════ SCREEN: CLOCK ══════════ -->
+<!-- SCREEN: CLOCK -->
 <div id="screen-clock" class="screen active">
   <div class="clock-header">
     <div class="clock-logo">Control de Asistencia</div>
     <div class="clock-time" id="live-time">--:--</div>
     <div class="clock-date" id="live-date"></div>
   </div>
-
   <div id="employee-grid" class="employee-grid"></div>
-
   <div class="pin-section">
     <div class="pin-label" id="pin-label">Selecciona tu nombre y escribe tu PIN</div>
     <div class="pin-display">
-      <div class="pin-dot" id="d0"></div>
-      <div class="pin-dot" id="d1"></div>
-      <div class="pin-dot" id="d2"></div>
-      <div class="pin-dot" id="d3"></div>
+      <div class="pin-dot" id="d0"></div><div class="pin-dot" id="d1"></div>
+      <div class="pin-dot" id="d2"></div><div class="pin-dot" id="d3"></div>
     </div>
     <div class="pin-pad">
       <button class="pin-btn" onclick="pinPress('1')">1</button>
@@ -227,42 +176,41 @@
       <button class="pin-btn" onclick="pinPress('7')">7</button>
       <button class="pin-btn" onclick="pinPress('8')">8</button>
       <button class="pin-btn" onclick="pinPress('9')">9</button>
-      <button class="pin-btn del" onclick="pinDel()">⌫</button>
+      <button class="pin-btn del" onclick="pinDel()">&#9003;</button>
       <button class="pin-btn" onclick="pinPress('0')">0</button>
       <button class="pin-btn ok" onclick="pinConfirm()">OK</button>
     </div>
   </div>
-
-  <button onclick="showLogin()" style="position:fixed;bottom:20px;right:20px;background:var(--bg3);border:1px solid var(--border);border-radius:100px;padding:8px 16px;color:var(--text2);font-size:12px;cursor:pointer;">⚙ Admin</button>
-<div id="conn-indicator" style="position:fixed;bottom:20px;left:20px;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3)">
-  <div id="conn-dot" style="width:7px;height:7px;border-radius:50%;background:var(--text3)"></div>
-  <span id="conn-label">Conectando...</span>
+  <button onclick="showLogin()" style="position:fixed;bottom:20px;right:20px;background:var(--bg3);border:1px solid var(--border);border-radius:100px;padding:8px 16px;color:var(--text2);font-size:12px;cursor:pointer;">&#9881; Admin</button>
+  <div id="conn-indicator" style="position:fixed;bottom:20px;left:20px;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3)">
+    <div id="conn-dot" style="width:7px;height:7px;border-radius:50%;background:var(--text3)"></div>
+    <span id="conn-label">Conectando...</span>
+  </div>
 </div>
-</div>
 
-<!-- ══════════ SCREEN: LOGIN ══════════ -->
+<!-- SCREEN: LOGIN -->
 <div id="screen-login" class="screen">
   <div class="login-card">
     <div class="login-logo">Admin</div>
     <div class="login-title">Acceso Administrador</div>
-    <div class="login-sub">Ingresa tu contraseña</div>
-    <input type="password" class="login-input" id="admin-pw" placeholder="Contraseña" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="login-sub">Ingresa tu contrase&ntilde;a</div>
+    <input type="password" class="login-input" id="admin-pw" placeholder="Contrase&ntilde;a" onkeydown="if(event.key==='Enter')doLogin()">
     <button class="btn btn-primary" style="width:100%" onclick="doLogin()">Entrar</button>
     <button class="btn btn-secondary" style="width:100%;margin-top:8px" onclick="showScreen('screen-clock')">Cancelar</button>
   </div>
 </div>
 
-<!-- ══════════ SCREEN: ADMIN ══════════ -->
+<!-- SCREEN: ADMIN -->
 <div id="screen-admin" class="screen">
   <div class="admin-nav">
-    <button class="btn btn-secondary btn-sm" onclick="showScreen('screen-clock')">← Salir</button>
+    <button class="btn btn-secondary btn-sm" onclick="showScreen('screen-clock')">&#8592; Salir</button>
     <div class="admin-nav-title">Panel Admin</div>
   </div>
   <div class="tab-bar">
     <div class="tab active" onclick="switchTab('tab-employees',this)">Empleados</div>
     <div class="tab" onclick="switchTab('tab-attendance',this)">Asistencia</div>
-    <div class="tab" onclick="switchTab('tab-payroll',this)">Nómina</div>
-    <div class="tab" onclick="switchTab('tab-settings',this)">Configuración</div>
+    <div class="tab" onclick="switchTab('tab-payroll',this)">N&oacute;mina</div>
+    <div class="tab" onclick="switchTab('tab-settings',this)">Configuraci&oacute;n</div>
   </div>
 
   <!-- TAB: Employees -->
@@ -293,33 +241,33 @@
     </div>
     <div class="att-table-wrap">
       <table>
-        <thead>
-          <tr>
-            <th>Empleado</th>
-            <th>Fecha</th>
-            <th>Entrada</th>
-            <th>Salida</th>
-            <th>Estado</th>
-            <th>Descuento</th>
-            <th style="width:60px"></th>
-          </tr>
-        </thead>
+        <thead><tr>
+          <th>Empleado</th><th>Fecha</th><th>Entrada</th><th>Salida</th>
+          <th>Estado</th><th>Descuento</th><th style="width:60px"></th>
+        </tr></thead>
         <tbody id="att-tbody"></tbody>
       </table>
     </div>
     <div id="att-empty" class="empty-state hidden">
-      <div class="empty-state-icon">📋</div>
-      <div class="empty-state-text">No hay registros en este período</div>
+      <div class="empty-state-icon">&#128203;</div>
+      <div class="empty-state-text">No hay registros en este per&iacute;odo</div>
     </div>
   </div>
 
   <!-- TAB: Payroll -->
   <div id="tab-payroll" class="tab-content">
-    <div class="payroll-period">
-      <input type="date" id="pay-from" class="form-input">
-      <span style="color:var(--text2);font-size:13px">hasta</span>
-      <input type="date" id="pay-to" class="form-input">
-      <button class="btn btn-primary btn-sm" onclick="renderPayroll()">Calcular</button>
+    <div class="payroll-period" style="flex-wrap:wrap;gap:10px;align-items:center">
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <span style="font-size:13px;color:var(--text2)">Per&iacute;odo:</span>
+        <button class="btn btn-secondary btn-sm" id="btn-q1" onclick="selectQuincena(1)" style="min-width:110px">1&ndash;15 quincena</button>
+        <button class="btn btn-secondary btn-sm" id="btn-q2" onclick="selectQuincena(2)" style="min-width:110px">16&ndash;30 quincena</button>
+        <select id="pay-month" class="form-input" style="width:130px" onchange="updateQuincenaButtons()"></select>
+        <select id="pay-year" class="form-input" style="width:90px" onchange="updateQuincenaButtons()"></select>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span style="font-size:12px;color:var(--text3)" id="pay-period-label"></span>
+        <button class="btn btn-primary btn-sm" onclick="renderPayroll()">Calcular</button>
+      </div>
     </div>
     <div id="payroll-list"></div>
   </div>
@@ -327,28 +275,7 @@
   <!-- TAB: Settings -->
   <div id="tab-settings" class="tab-content">
     <div class="settings-section">
-      <div class="settings-title">Horario laboral</div>
-      <div class="setting-row">
-        <div>
-          <div class="setting-label">Hora de entrada</div>
-          <div class="setting-sub">Hora a partir de la cual se considera tarde</div>
-        </div>
-        <input type="time" id="cfg-entry" class="form-input" style="width:110px" onchange="saveConfig()">
-      </div>
-      <div class="setting-row">
-        <div>
-          <div class="setting-label">Hora de salida esperada</div>
-          <div class="setting-sub">Antes de esta hora se considera salida temprana</div>
-        </div>
-        <input type="time" id="cfg-exit" class="form-input" style="width:110px" onchange="saveConfig()">
-      </div>
-      <div class="setting-row">
-        <div>
-          <div class="setting-label">Horas laborables por día</div>
-          <div class="setting-sub">Se usa para calcular el pago por hora y los descuentos</div>
-        </div>
-        <input type="number" id="cfg-workhours" class="form-input" style="width:80px" min="1" max="24" onchange="saveConfig()">
-      </div>
+      <div class="settings-title">Descuentos y amonestaciones</div>
       <div class="setting-row">
         <div>
           <div class="setting-label">Tolerancia de entrada (minutos)</div>
@@ -356,19 +283,24 @@
         </div>
         <input type="number" id="cfg-grace" class="form-input" style="width:80px" min="0" max="60" onchange="saveConfig()">
       </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Amonestaci&oacute;n por no marcar (RD$)</div>
+          <div class="setting-sub">Se aplica autom&aacute;ticamente si falta entrada o salida</div>
+        </div>
+        <input type="number" id="cfg-sanction" class="form-input" style="width:100px" min="0" onchange="saveConfig()">
+      </div>
     </div>
     <div class="settings-section">
       <div class="settings-title">Seguridad</div>
       <div class="setting-row">
-        <div>
-          <div class="setting-label">Cambiar contraseña admin</div>
-        </div>
+        <div><div class="setting-label">Cambiar contrase&ntilde;a admin</div></div>
         <button class="btn btn-secondary btn-sm" onclick="changePassword()">Cambiar</button>
       </div>
       <div class="setting-row">
         <div>
           <div class="setting-label">Limpiar todos los datos</div>
-          <div class="setting-sub" style="color:var(--danger)">Esta acción no se puede deshacer</div>
+          <div class="setting-sub" style="color:var(--danger)">Esta acci&oacute;n no se puede deshacer</div>
         </div>
         <button class="btn btn-danger btn-sm" onclick="clearAllData()">Limpiar</button>
       </div>
@@ -376,80 +308,66 @@
   </div>
 </div>
 
-<!-- ══════════ MODAL: CAMERA ══════════ -->
+<!-- MODAL: CAMERA -->
 <div id="modal-camera" class="modal-overlay hidden">
   <div class="modal-card">
-    <div class="modal-title" id="cam-modal-title">Verificación de identidad</div>
-    <div class="modal-sub" id="cam-modal-sub">Mira a la cámara para confirmar</div>
+    <div class="modal-title" id="cam-modal-title">Verificaci&oacute;n de identidad</div>
+    <div class="modal-sub" id="cam-modal-sub">Mira a la c&aacute;mara para confirmar</div>
     <div class="camera-frame">
       <video id="cam-video" autoplay playsinline muted></video>
       <canvas id="cam-canvas" style="display:none"></canvas>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-primary" id="btn-capture" onclick="capturePhoto()">📷 Capturar</button>
+      <button class="btn btn-primary" id="btn-capture" onclick="capturePhoto()">&#128247; Capturar</button>
       <button class="btn btn-secondary" onclick="cancelCamera()">Cancelar</button>
     </div>
     <div id="cam-preview-section" style="display:none;margin-top:14px">
       <img id="cam-preview" style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid var(--accent2);display:block;margin:0 auto 14px">
       <div class="modal-actions">
-        <button class="btn btn-primary" onclick="confirmCapture()">✓ Confirmar</button>
+        <button class="btn btn-primary" onclick="confirmCapture()">&#10003; Confirmar</button>
         <button class="btn btn-secondary btn-sm" onclick="retakePhoto()">Repetir</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ══════════ SCREEN: PRINT ══════════ -->
-<div id="screen-print" class="screen">
-  <div class="print-controls">
-    <button class="btn btn-secondary btn-sm" onclick="history.back();showScreen('screen-admin')">← Volver</button>
-    <button class="btn btn-primary btn-sm" onclick="triggerPrint()">🖨 Imprimir (EPSON)</button>
-    <button class="btn btn-secondary btn-sm" onclick="copyPrintText()">📋 Copiar texto</button>
-  </div>
-  <div class="print-preview" id="print-preview-content"></div>
-  <div id="print-content" style="display:none"></div>
-</div>
-
-
-<!-- MODAL: PERDON DE AUSENCIA -->
+<!-- MODAL: PERDON -->
 <div id="modal-pardon" class="modal-overlay hidden">
   <div class="modal-card" style="max-width:420px">
     <div class="modal-title">Perdonar ausencia / descuento</div>
     <div class="modal-sub" id="pardon-info"></div>
     <input type="hidden" id="pardon-record-id">
     <div style="text-align:left;margin-bottom:16px">
-      <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:6px">
-        Motivo de la constancia <span style="color:var(--danger)">*</span>
-      </label>
-      <textarea id="pardon-reason" rows="4"
-        placeholder="Ej: Presentó constancia médica del Hospital General con fecha 15/03/2025. El empleado estuvo bajo tratamiento por infección respiratoria..."
-        style="width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;resize:vertical;outline:none;font-family:inherit;line-height:1.5"></textarea>
-      <div style="font-size:11px;color:var(--text3);margin-top:6px">
-        Este texto quedara registrado en el historial y aparecera en el reporte impreso.
-      </div>
+      <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:6px">Motivo de la constancia <span style="color:var(--danger)">*</span></label>
+      <textarea id="pardon-reason" rows="4" placeholder="Ej: Present&oacute; constancia m&eacute;dica..." style="width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;resize:vertical;outline:none;font-family:inherit;line-height:1.5"></textarea>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px">Este texto quedar&aacute; registrado en el historial y reporte impreso.</div>
     </div>
     <div style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.25);border-radius:8px;padding:10px 12px;margin-bottom:16px;font-size:12px;color:#a78bfa">
-      Al confirmar: el descuento queda en RD$0 y la ausencia se marca como perdonada con constancia.
+      Al confirmar: el descuento queda en RD$0 y la ausencia se marca como perdonada.
     </div>
     <div class="modal-actions">
-      <button class="btn btn-primary" onclick="confirmPardon()" style="background:#7c3aed;border-color:#7c3aed">
-        &#10003; Confirmar perdono
-      </button>
-      <button class="btn btn-secondary" onclick="document.getElementById('modal-pardon').classList.add('hidden')">
-        Cancelar
-      </button>
+      <button class="btn btn-primary" onclick="confirmPardon()" style="background:#7c3aed;border-color:#7c3aed">&#10003; Confirmar perd&oacute;n</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modal-pardon').classList.add('hidden')">Cancelar</button>
     </div>
   </div>
+</div>
+
+<!-- SCREEN: PRINT -->
+<div id="screen-print" class="screen">
+  <div class="print-controls">
+    <button class="btn btn-secondary btn-sm" onclick="showScreen('screen-admin')">&#8592; Volver</button>
+    <button class="btn btn-primary btn-sm" onclick="triggerPrint()">&#128424; Imprimir (EPSON)</button>
+    <button class="btn btn-secondary btn-sm" onclick="copyPrintText()">&#128203; Copiar texto</button>
+  </div>
+  <div class="print-preview" id="print-preview-content"></div>
+  <div id="print-content" style="display:none"></div>
 </div>
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
 <script>
+
 // ─────────────────────────────────────────────
 // DATA LAYER
 // ─────────────────────────────────────────────
@@ -459,7 +377,7 @@ let db = null;
 // ── CACHE LOCAL (para que la UI funcione sin esperar red) ──
 let _employees = [];
 let _attendance = [];
-let _config = { entryTime:'10:00', exitTime:'22:00', graceMins:10, workHours:12, adminPw:'arepa2024' };
+let _config = { graceMins:10, sanctionAmount:500, adminPw:'arepa2024' };
 let _dbReady = false;
 
 function getEmployees() { return _employees; }
@@ -476,10 +394,8 @@ async function saveAttendance(arr) {
   await db.ref('attendance').set(arr);
 }
 async function saveConfig() {
-  _config.entryTime = document.getElementById('cfg-entry').value || _config.entryTime;
-  _config.exitTime = document.getElementById('cfg-exit').value || _config.exitTime;
-  _config.graceMins = parseInt(document.getElementById('cfg-grace').value) || _config.graceMins;
-  _config.workHours = parseFloat(document.getElementById('cfg-workhours').value) || _config.workHours;
+  _config.graceMins      = parseInt(document.getElementById('cfg-grace').value)      || _config.graceMins;
+  _config.sanctionAmount = parseFloat(document.getElementById('cfg-sanction').value) ?? _config.sanctionAmount;
   await db.ref('config').set(_config);
   showToast('Configuración guardada', 'success');
 }
@@ -511,6 +427,45 @@ function startFirebaseListeners() {
   });
 }
 
+// ─────────────────────────────────────────────
+// AMONESTACIÓN AUTOMÁTICA POR NO MARCAR
+// ─────────────────────────────────────────────
+async function checkAndApplySanctions() {
+  const att = getAttendance();
+  const cfg = getConfig();
+  const sanction = cfg.sanctionAmount || 500;
+  const today = new Date().toLocaleDateString('en-CA');
+  let changed = false;
+
+  // Revisar registros del día anterior hacia atrás (máx 7 días)
+  for (let d = 1; d <= 7; d++) {
+    const checkDate = new Date();
+    checkDate.setDate(checkDate.getDate() - d);
+    const dateStr = checkDate.toLocaleDateString('en-CA');
+    if (dateStr >= today) continue;
+
+    const dayRecs = att.filter(r => r.date === dateStr);
+
+    dayRecs.forEach((r, ri) => {
+      const idx = att.findIndex(x => x.id === r.id);
+      if (idx < 0) return;
+
+      // Si tiene entrada pero no salida y no es de hoy → amonestación por no marcar salida
+      if (r.in && !r.out && !r.sanctionOut && !r.pardoned) {
+        att[idx].out = cfg.exitTime; // registrar salida a hora oficial
+        att[idx].sanctionOut = sanction;
+        att[idx].sanctionOutReason = 'No marcó salida';
+        changed = true;
+      }
+    });
+  }
+
+  if (changed) {
+    await saveAttendance(att);
+    showToast('⚠ Se aplicaron amonestaciones por marcaciones faltantes', 'error');
+  }
+}
+
 // Default employees (Jenny, Peterson, Alberto)
 async function initDefaults() {
   // Mostrar pantalla de carga
@@ -522,10 +477,10 @@ async function initDefaults() {
       if (!snap.val() || snap.val().length === 0) {
         // Primera vez: cargar empleados por defecto
         const defaults = [
-          { id:'1', name:'Jenny', role:'Producción', pin:'1234', salary:25000, photo:'', emoji:'👩‍🍳' },
-          { id:'2', name:'Peterson', role:'Encargado A', pin:'2345', salary:25000, photo:'', emoji:'👨‍💼' },
-          { id:'3', name:'Alberto', role:'Encargado B', pin:'3456', salary:25000, photo:'', emoji:'👨‍🍳' },
-        ];
+          { id:'1', name:'Jenny',    role:'Producción',  pin:'1234', salary:25000, salarySmash:0, photo:'', emoji:'👩‍🍳', scheduleEntry:'10:00', scheduleMid:'22:00', scheduleExit:'22:00', scheduleHours:12, smashStart:'', smashHours:0 },
+          { id:'2', name:'Peterson', role:'Encargado A', pin:'2345', salary:25000, salarySmash:0, photo:'', emoji:'👨‍💼', scheduleEntry:'10:00', scheduleMid:'22:00', scheduleExit:'22:00', scheduleHours:12, smashStart:'', smashHours:0 },
+          { id:'3', name:'Alberto',  role:'Encargado B', pin:'3456', salary:25000, salarySmash:0, photo:'', emoji:'👨‍🍳', scheduleEntry:'10:00', scheduleMid:'22:00', scheduleExit:'22:00', scheduleHours:12, smashStart:'', smashHours:0 },
+        ]
         db.ref('employees').set(defaults).then(resolve);
       } else {
         resolve();
@@ -533,12 +488,12 @@ async function initDefaults() {
     });
   });
   const c = getConfig();
-  document.getElementById('cfg-entry').value = c.entryTime;
-  document.getElementById('cfg-exit').value = c.exitTime;
-  document.getElementById('cfg-grace').value = c.graceMins;
-  document.getElementById('cfg-workhours').value = c.workHours || 12;
+  document.getElementById('cfg-grace').value    = c.graceMins      || 10;
+  document.getElementById('cfg-sanction').value = c.sanctionAmount ?? 500;
   document.getElementById('loading-overlay').style.display = 'none';
   _dbReady = true;
+  // Verificar amonestaciones pendientes
+  setTimeout(checkAndApplySanctions, 2000);
 }
 
 // ─────────────────────────────────────────────
@@ -715,25 +670,41 @@ function stopCam() {
 async function processRecord(photoData) {
   const now = new Date();
   const today = now.toLocaleDateString('en-CA');
-  // Guardamos en 24h internamente para consistencia; mostramos en 12h al usuario
   const timeStr24 = now.toLocaleTimeString('es-DO', {hour:'2-digit', minute:'2-digit', hour12: false});
-  const timeStr = now.toLocaleTimeString('es-DO', {hour:'2-digit', minute:'2-digit', hour12: true});
-  const att = getAttendance();
-  const emp = getEmployees().find(e => e.id === selectedEmpId);
-  const cfg = getConfig();
+  const timeStr   = now.toLocaleTimeString('es-DO', {hour:'2-digit', minute:'2-digit', hour12: true});
+  const att  = getAttendance();
+  const emp  = getEmployees().find(e => e.id === selectedEmpId);
+  const cfg  = getConfig();
 
-  if (cameraMode === 'checkin') {
-    // Calculate late minutes
-    const [eh,em] = cfg.entryTime.split(':').map(Number);
-    const entryOfficial = new Date(now); entryOfficial.setHours(eh, em, 0, 0);
-    const entryWithGrace = new Date(now); entryWithGrace.setHours(eh, em + cfg.graceMins, 0, 0);
-    // Si llega antes de la hora oficial, registrar hora oficial (llegar temprano no da beneficio)
-    const arrivedEarly = now < entryOfficial;
-    const recordedIn = arrivedEarly ? cfg.entryTime : timeStr24;
-    const lateMin = now > entryWithGrace ? Math.round((now - entryWithGrace) / 60000) : 0;
-    const discount = lateMin > 0 ? calcDiscount(emp.salary, lateMin, cfg) : 0;
+  // Determinar si tiene turno Smash
+  const hasSmash = !!(emp.salarySmash);
 
-    att.push({
+  // Horarios POR EMPLEADO
+  const entryStr = emp.scheduleEntry || '10:00';
+  const midStr   = emp.smashStart    || emp.scheduleMid || '22:00';
+  const exitStr  = emp.scheduleExit  || '22:00';
+  const [eh,em]  = entryStr.split(':').map(Number);
+  const [mh,mm]  = midStr.split(':').map(Number);
+  const [xh,xm]  = exitStr.split(':').map(Number);
+  const entryOff  = new Date(now); entryOff.setHours(eh,em,0,0);
+  const entryGrace= new Date(now); entryGrace.setHours(eh,em+(cfg.graceMins||10),0,0);
+  const midTime   = new Date(now); midTime.setHours(mh,mm,0,0);
+  const exitOff   = new Date(now); exitOff.setHours(xh,xm,0,0);
+
+  const todayRecs = att.filter(r => r.empId === emp.id && r.date === today);
+  const openRec   = todayRecs.filter(r => r.in && !r.out).slice(-1)[0];
+  const isCheckin = !openRec;
+
+  if (isCheckin) {
+    // ── ENTRADA ──
+    const arrivedEarly = now < entryOff;
+    const recordedIn   = arrivedEarly ? cfg.entryTime : timeStr24;
+    const lateMin      = now > entryGrace ? Math.round((now - entryGrace) / 60000) : 0;
+
+    // Descuento de tardanza va contra sueldo Arepa (turno mañana)
+    const discountIn = calcDiscount(emp.salary, lateMin, emp.scheduleHours || 12);
+
+    const rec = {
       id: Date.now()+'',
       empId: emp.id,
       empName: emp.name,
@@ -745,34 +716,53 @@ async function processRecord(photoData) {
       lateMin,
       earlyMin: 0,
       absent: false,
-      discountIn: discount,
+      discountIn,
       discountOut: 0,
-    });
+      sanctionIn: 0,    // amonestación por no marcar entrada
+      sanctionOut: 0,   // amonestación por no marcar salida
+      brand: 'arepa',   // turno de entrada = arepa
+    };
+    att.push(rec);
     await saveAttendance(att);
+
     const displayIn = arrivedEarly ? `${to12h(cfg.entryTime)} (llegó ${to12h(timeStr24)})` : timeStr;
     const msg = lateMin > 0
-      ? `Entrada registrada ⚠ ${lateMin} min tarde · Descuento: RD$${discount.toFixed(0)}`
+      ? `Entrada registrada ⚠ ${lateMin} min tarde · Descuento Arepa: RD$${discountIn.toFixed(0)}`
       : `¡Bienvenido ${emp.name}! Entrada: ${displayIn}`;
     showToast(msg, lateMin > 0 ? 'error' : 'success');
+
   } else {
-    // Checkout
-    const recIdx = att.map((r,i)=>({r,i})).filter(({r})=>r.empId===emp.id && r.date===today && r.in && !r.out).slice(-1)[0];
+    // ── SALIDA ──
+    const recIdx = att.map((r,i)=>({r,i})).filter(({r})=>r.empId===emp.id&&r.date===today&&r.in&&!r.out).slice(-1)[0];
     if (!recIdx) { showToast('No se encontró registro de entrada', 'error'); return; }
-    const [xh,xm] = cfg.exitTime.split(':').map(Number);
-    const exitOfficial = new Date(now); exitOfficial.setHours(xh, xm, 0, 0);
-    // Si sale despues de la hora oficial, registrar hora oficial (no hay pago extra)
-    const leftLate = now > exitOfficial;
-    const recordedOut = leftLate ? cfg.exitTime : timeStr24;
-    const earlyMin = now < exitOfficial ? Math.round((exitOfficial - now) / 60000) : 0;
-    const discount = earlyMin > 0 ? calcDiscount(emp.salary, earlyMin, cfg) : 0;
-    att[recIdx.i].out = recordedOut;
-    att[recIdx.i].photoOut = photoData;
-    att[recIdx.i].earlyMin = earlyMin;
-    att[recIdx.i].discountOut = discount;
+
+    const leftLate   = now > exitOff;
+    const recordedOut= leftLate ? cfg.exitTime : timeStr24;
+    const earlyMin   = now < exitOff ? Math.round((exitOff - now) / 60000) : 0;
+
+    // Determinar si la salida es del turno Arepa o Smash
+    // Si sale antes de la hora intermedia → descuento sobre sueldo Arepa
+    // Si sale después de la hora intermedia y antes de la salida → descuento sobre sueldo Smash
+    let discountOut = 0;
+    let exitBrand   = 'arepa';
+    if (hasSmash && now >= midTime) {
+      exitBrand   = 'smash';
+      discountOut = calcDiscount(emp.salarySmash, earlyMin, emp.smashHours || 4);
+    } else {
+      discountOut = calcDiscount(emp.salary, earlyMin, emp.scheduleHours || 12);
+    }
+
+    att[recIdx.i].out        = recordedOut;
+    att[recIdx.i].photoOut   = photoData;
+    att[recIdx.i].earlyMin   = earlyMin;
+    att[recIdx.i].discountOut= discountOut;
+    att[recIdx.i].exitBrand  = exitBrand;
     await saveAttendance(att);
+
     const displayOut = leftLate ? `${to12h(cfg.exitTime)} (salió ${to12h(timeStr24)})` : timeStr;
+    const brandLabel = exitBrand === 'smash' ? 'Smash' : 'Arepa';
     const msg = earlyMin > 0
-      ? `Salida registrada ⚠ ${earlyMin} min antes · Descuento: RD$${discount.toFixed(0)}`
+      ? `Salida registrada ⚠ ${earlyMin} min antes · Descuento ${brandLabel}: RD$${discountOut.toFixed(0)}`
       : `Hasta luego ${emp.name}! Salida: ${displayOut}`;
     showToast(msg, earlyMin > 0 ? 'error' : 'success');
   }
@@ -782,11 +772,12 @@ async function processRecord(photoData) {
   document.getElementById('pin-label').textContent = 'Selecciona tu nombre y escribe tu PIN';
 }
 
-function calcDiscount(salary, minutes, cfg) {
-  // Fórmula: sueldo ÷ 30 = pago diario ÷ horas laborables = pago por hora ÷ 60 = pago por minuto
-  const payPerDay = salary / 30;
-  const payPerHour = payPerDay / (cfg.workHours || 8);
-  const payPerMin = payPerHour / 60;
+function calcDiscount(salary, minutes, hours) {
+  // sueldo ÷ 30 ÷ horas ÷ 60 × minutos
+  if (!salary || !minutes) return 0;
+  const payPerDay  = salary / 30;
+  const payPerHour = payPerDay / (hours || 8);
+  const payPerMin  = payPerHour / 60;
   return payPerMin * minutes;
 }
 
@@ -830,7 +821,7 @@ function renderAdminEmployees() {
         <div class="emp-row-avatar">${emp.photo ? `<img src="${emp.photo}">` : (emp.emoji||'👤')}</div>
         <div class="emp-row-info">
           <div class="emp-row-name">${emp.name}</div>
-          <div class="emp-row-meta">${emp.role} · PIN: ****  · RD$${Number(emp.salary).toLocaleString('es-DO')}/mes</div>
+          <div class="emp-row-meta">${emp.role} · ${emp.scheduleEntry||'10:00'}–${emp.scheduleExit||'22:00'} · Arepa: RD$${Number(emp.salary||0).toLocaleString('es-DO')}${emp.salarySmash?' | Smash: RD$'+Number(emp.salarySmash).toLocaleString('es-DO'):''}/mes</div>
         </div>
         <div class="emp-row-actions">
           <button class="btn btn-secondary btn-sm" onclick="toggleEmpDetails('${emp.id}')">✏ Editar</button>
@@ -847,30 +838,73 @@ function renderAdminEmployees() {
             <label>Cargo</label>
             <input class="form-input" id="ef-role-${emp.id}" value="${emp.role}">
           </div>
-          <div class="form-group">
+          <div class="form-group" style="grid-column:span 2">
             <label>PIN (4 dígitos)</label>
-            <input class="form-input" id="ef-pin-${emp.id}" value="${emp.pin}" maxlength="4" type="password">
-          </div>
-          <div class="form-group">
-            <label>Sueldo mensual (RD$)</label>
-            <input class="form-input" id="ef-salary-${emp.id}" value="${emp.salary}" type="number">
+            <input class="form-input" id="ef-pin-${emp.id}" value="${emp.pin}" maxlength="4" type="password" style="max-width:160px">
           </div>
         </div>
-        <div class="form-group" style="margin-top:12px">
-          <label>Foto (capturar o subir)</label>
-          <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
-            <button class="btn btn-secondary btn-sm" onclick="capturEmpPhoto('${emp.id}')">📷 Cámara</button>
-            <label class="btn btn-secondary btn-sm" style="cursor:pointer">📁 Archivo<input type="file" accept="image/*" style="display:none" onchange="loadEmpPhoto(event,'${emp.id}')"></label>
-            ${emp.photo ? `<img src="${emp.photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--accent)">` : ''}
+        <div style="margin-top:14px;padding:14px;background:rgba(220,50,50,.06);border:1px solid rgba(220,50,50,.2);border-radius:10px">
+          <div style="font-size:11px;font-weight:600;color:#f87171;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">🪱 Arepa Lovers</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Sueldo mensual (RD$)</label>
+              <input class="form-input" id="ef-salary-${emp.id}" value="${emp.salary||''}" type="number" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label>Horas de turno</label>
+              <input class="form-input" id="ef-hours-${emp.id}" value="${emp.scheduleHours||12}" type="number" min="1" max="24">
+            </div>
+            <div class="form-group">
+              <label>Hora entrada</label>
+              <input class="form-input" id="ef-entry-${emp.id}" value="${emp.scheduleEntry||'10:00'}" type="time">
+            </div>
+            <div class="form-group">
+              <label>Fin turno Arepa</label>
+              <input class="form-input" id="ef-mid-${emp.id}" value="${emp.scheduleMid||'22:00'}" type="time">
+            </div>
           </div>
         </div>
-        <div style="margin-top:14px;display:flex;gap:8px">
+        <div style="margin-top:10px;padding:14px;background:rgba(79,110,247,.06);border:1px solid rgba(79,110,247,.2);border-radius:10px">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;margin-bottom:10px">
+            <input type="checkbox" id="ef-dual-${emp.id}" ${emp.salarySmash?'checked':''} onchange="toggleSmashSalary('${emp.id}')">
+            <span style="font-weight:600;color:var(--accent)">🍔 También trabaja en Smash Lovers</span>
+          </label>
+          <div id="ef-smash-block-${emp.id}" style="display:${emp.salarySmash?'block':'none'}">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Sueldo Smash (RD$/mes)</label>
+                <input class="form-input" id="ef-salary-smash-${emp.id}" value="${emp.salarySmash||''}" type="number" placeholder="0">
+              </div>
+              <div class="form-group">
+                <label>Horas turno Smash</label>
+                <input class="form-input" id="ef-smash-hours-${emp.id}" value="${emp.smashHours||4}" type="number" min="1" max="24">
+              </div>
+              <div class="form-group">
+                <label>Inicio turno Smash</label>
+                <input class="form-input" id="ef-smash-start-${emp.id}" value="${emp.smashStart||'18:00'}" type="time">
+              </div>
+            </div>
+          </div>
+          <!-- Hora de salida: siempre visible, aplica a Arepa (turno único) o Smash (doble turno) -->
+          <div class="form-group" style="margin-top:10px">
+            <label id="ef-exit-label-${emp.id}">${emp.salarySmash ? 'Salida Smash' : 'Hora de salida'}</label>
+            <input class="form-input" id="ef-smash-exit-${emp.id}" value="${emp.scheduleExit||'22:00'}" type="time" style="max-width:140px">
+          </div>
+        </div>
+                <div style="margin-top:14px;display:flex;gap:8px">
           <button class="btn btn-primary btn-sm" onclick="saveEmployee('${emp.id}')">Guardar</button>
           <button class="btn btn-secondary btn-sm" onclick="toggleEmpDetails('${emp.id}')">Cancelar</button>
         </div>
       </div>
     </div>
   `).join('');
+}
+
+function toggleSmashSalary(id) {
+  const checked = document.getElementById('ef-dual-'+id).checked;
+  document.getElementById('ef-smash-block-'+id).style.display = checked ? 'block' : 'none';
+  const lbl = document.getElementById('ef-exit-label-'+id);
+  if (lbl) lbl.textContent = checked ? 'Salida Smash' : 'Hora de salida';
 }
 
 function toggleEmpDetails(id) {
@@ -884,8 +918,24 @@ async function saveEmployee(id) {
   emps[idx].role = document.getElementById('ef-role-'+id).value.trim();
   const pin = document.getElementById('ef-pin-'+id).value.trim();
   if (pin.length === 4 && /^\d+$/.test(pin)) emps[idx].pin = pin;
-  emps[idx].salary = parseFloat(document.getElementById('ef-salary-'+id).value) || emps[idx].salary;
-  saveEmployees(emps);
+  emps[idx].salary        = parseFloat(document.getElementById('ef-salary-'+id).value)       || 0;
+  emps[idx].scheduleEntry = document.getElementById('ef-entry-'+id).value                   || '10:00';
+  emps[idx].scheduleExit  = document.getElementById('ef-smash-exit-'+id) ? document.getElementById('ef-smash-exit-'+id).value : '22:00';
+  emps[idx].scheduleHours = parseFloat(document.getElementById('ef-hours-'+id).value)       || 12;
+  const dualCheck = document.getElementById('ef-dual-'+id);
+  if (dualCheck && dualCheck.checked) {
+    emps[idx].salarySmash  = parseFloat(document.getElementById('ef-salary-smash-'+id).value) || 0;
+    emps[idx].smashHours   = parseFloat(document.getElementById('ef-smash-hours-'+id).value)  || 4;
+    emps[idx].smashStart   = document.getElementById('ef-smash-start-'+id).value              || '18:00';
+    emps[idx].scheduleMid  = emps[idx].smashStart;
+    emps[idx].scheduleExit = document.getElementById('ef-smash-exit-'+id).value               || '22:00';
+  } else {
+    emps[idx].salarySmash = 0;
+    emps[idx].smashHours  = 0;
+    emps[idx].smashStart  = '';
+    emps[idx].scheduleMid = emps[idx].scheduleExit;
+  }
+  await saveEmployees(emps);
   renderAdminEmployees(); renderEmployeeGrid();
   showToast('Empleado guardado', 'success');
 }
@@ -1095,88 +1145,178 @@ function formatDate(d) {
 // ─────────────────────────────────────────────
 function initPayrollDates() {
   const now = new Date();
-  const y = now.getFullYear(); const m = now.getMonth();
-  const from = new Date(y,m,1).toLocaleDateString('en-CA');
-  const to = new Date(y,m+1,0).toLocaleDateString('en-CA');
-  if (!document.getElementById('pay-from').value) document.getElementById('pay-from').value = from;
-  if (!document.getElementById('pay-to').value) document.getElementById('pay-to').value = to;
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const monthSel = document.getElementById('pay-month');
+  const yearSel = document.getElementById('pay-year');
+  const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  monthSel.innerHTML = months.map((mn,i) => `<option value="${i}" ${i===m?'selected':''}>${mn}</option>`).join('');
+  yearSel.innerHTML = [y-1, y, y+1].map(yr => `<option value="${yr}" ${yr===y?'selected':''}>${yr}</option>`).join('');
+  const quincena = now.getDate() <= 15 ? 1 : 2;
+  selectQuincena(quincena);
 }
+
+function updateQuincenaButtons() {
+  const active = document.getElementById('btn-q1').classList.contains('active-q') ? 1 : 2;
+  selectQuincena(active);
+}
+
+function selectQuincena(q) {
+  const m = parseInt(document.getElementById('pay-month').value);
+  const y = parseInt(document.getElementById('pay-year').value);
+  const lastDay = new Date(y, m+1, 0).getDate();
+  const from1 = new Date(y,m,1).toLocaleDateString('en-CA');
+  const to1   = new Date(y,m,15).toLocaleDateString('en-CA');
+  const from2 = new Date(y,m,16).toLocaleDateString('en-CA');
+  const to2   = new Date(y,m+1,0).toLocaleDateString('en-CA');
+  const q1 = document.getElementById('btn-q1');
+  const q2 = document.getElementById('btn-q2');
+  q1.dataset.from = from1; q1.dataset.to = to1;
+  q2.dataset.from = from2; q2.dataset.to = to2;
+  q1.classList.toggle('active-q', q===1);
+  q2.classList.toggle('active-q', q===2);
+  q1.style.cssText = q===1 ? 'background:var(--accent);color:#fff;border-color:var(--accent);min-width:110px' : 'min-width:110px';
+  q2.style.cssText = q===2 ? 'background:var(--accent);color:#fff;border-color:var(--accent);min-width:110px' : 'min-width:110px';
+  const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('pay-period-label').textContent =
+    q===1 ? `1 al 15 de ${months[m]} ${y}` : `16 al ${lastDay} de ${months[m]} ${y}`;
+  renderPayroll();
+}
+
+function getActiveQuincenaDates() {
+  const q1 = document.getElementById('btn-q1');
+  const q2 = document.getElementById('btn-q2');
+  if (q1.classList.contains('active-q')) return { from: q1.dataset.from, to: q1.dataset.to, q: 1 };
+  return { from: q2.dataset.from, to: q2.dataset.to, q: 2 };
+}
+
 function renderPayroll() {
-  const from = document.getElementById('pay-from').value;
-  const to = document.getElementById('pay-to').value;
+  const { from, to, q } = getActiveQuincenaDates();
+  if (!from || !to) return;
   const emps = getEmployees();
   const att = getAttendance();
   const list = document.getElementById('payroll-list');
-  if (!from||!to) { list.innerHTML='<div class="empty-state"><div class="empty-state-text">Selecciona el período</div></div>'; return; }
-  list.innerHTML = emps.map(emp => {
-    const records = att.filter(r=>r.empId===emp.id && r.date>=from && r.date<=to);
-    const cfg = getConfig();
-    // Solo contar registros NO perdonados para descuentos
-    const unpardoned = records.filter(r=>!r.pardoned);
-    const pardoned = records.filter(r=>r.pardoned);
-    const totalLateMin = unpardoned.reduce((a,r)=>a+(r.lateMin||0),0);
-    const totalEarlyMin = unpardoned.reduce((a,r)=>a+(r.earlyMin||0),0);
-    const absentDays = unpardoned.filter(r=>r.absent).length;
-    const totalDiscLate = unpardoned.reduce((a,r)=>a+(r.discountIn||0),0);
-    const totalDiscEarly = unpardoned.reduce((a,r)=>a+(r.discountOut||0),0);
-    const discAbsent = absentDays * (emp.salary / 30);
-    const totalDiscount = totalDiscLate + totalDiscEarly + discAbsent;
-    const netPay = emp.salary - totalDiscount;
+  const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  // Generar tarjetas: una por marca por empleado
+  const cards = [];
+  emps.forEach(emp => {
+    // Tarjeta Arepa Lovers
+    if (emp.salary) cards.push(buildPayrollCard(emp, 'arepa', from, to, q, att));
+    // Tarjeta Smash Lovers (si aplica)
+    if (emp.salarySmash) cards.push(buildPayrollCard(emp, 'smash', from, to, q, att));
+  });
+  list.innerHTML = cards.join('') || '<div class="empty-state"><div class="empty-state-text">No hay empleados con sueldo configurado</div></div>';
+}
+
+function buildPayrollCard(emp, brand, from, to, q, att) {
+    const isMidNight = false;
+    const salary = brand === 'smash' ? emp.salarySmash : emp.salary;
+    const brandLabel = brand === 'smash' ? '🍔 Smash Lovers' : '🫓 Arepa Lovers';
+    const brandColor = brand === 'smash' ? 'rgba(79,110,247,.15)' : 'rgba(220,50,50,.12)';
+    const sueldoQuincenal = salary / 2;
+    const records = att.filter(r => r.empId === emp.id && r.date >= from && r.date <= to);
+    const unpardoned = records.filter(r => !r.pardoned);
+    const pardoned   = records.filter(r =>  r.pardoned);
+
+    // Descuentos según marca
+    let totalDiscLate  = 0, totalDiscEarly = 0, totalLateMin = 0, totalEarlyMin = 0;
+    let absentDays = 0, discAbsent = 0, totalSanctions = 0;
+
+    unpardoned.forEach(r => {
+      if (brand === 'arepa') {
+        // Tardanza siempre es turno Arepa
+        totalDiscLate += r.discountIn || 0;
+        totalLateMin  += r.lateMin    || 0;
+        // Salida temprana turno Arepa solo si exitBrand es arepa o no tiene Smash
+        if (!emp.salarySmash || r.exitBrand === 'arepa') {
+          totalDiscEarly += r.discountOut || 0;
+          totalEarlyMin  += r.earlyMin   || 0;
+        }
+        // Amonestación entrada
+        totalSanctions += r.sanctionIn || 0;
+      } else {
+        // Smash: solo salida temprana de turno Smash
+        if (r.exitBrand === 'smash') {
+          totalDiscEarly += r.discountOut || 0;
+          totalEarlyMin  += r.earlyMin   || 0;
+        }
+        // Amonestación salida
+        totalSanctions += r.sanctionOut || 0;
+      }
+      // Ausencias afectan a ambas marcas proporcionalmente
+      if (r.absent) absentDays++;
+    });
+
+    discAbsent = absentDays * (salary / 30);
+    const totalDiscount = totalDiscLate + totalDiscEarly + discAbsent + totalSanctions;
+    const netPay = Math.max(0, sueldoQuincenal - totalDiscount);
+  const fmt2 = n => Number(n).toLocaleString('es-DO',{minimumFractionDigits:0,maximumFractionDigits:0});
+    const fmt = n => Number(n).toLocaleString('es-DO', {minimumFractionDigits:0, maximumFractionDigits:0});
+    const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const m2 = new Date(from).getMonth();
+    const y2 = new Date(from).getFullYear();
+
     return `
       <div class="payroll-card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:8px 12px;background:${brandColor};border-radius:8px">
+          <span style="font-size:14px;font-weight:600">${brandLabel}</span>
+        </div>
         <div class="payroll-card-header">
           <div style="display:flex;align-items:center;gap:10px">
-            <div class="emp-row-avatar" style="width:40px;height:40px;font-size:18px">${emp.photo?`<img src="${emp.photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`:(emp.emoji||'👤')}</div>
+            <div class="emp-row-avatar" style="width:40px;height:40px;font-size:18px">${emp.photo?`<img src="${emp.photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`:(emp.emoji||'?')}</div>
             <div>
               <div class="payroll-card-name">${emp.name}</div>
-              <div class="payroll-card-salary">${emp.role} · ${formatDate(from)} – ${formatDate(to)}</div>
+              <div class="payroll-card-salary">${emp.role} &middot; ${q===1?'1ra':'2da'} quincena &middot; ${formatDate(from)} &ndash; ${formatDate(to)}</div>
             </div>
           </div>
-          <div style="display:flex;gap:8px">
-            <button class="print-btn" onclick="printPayrollReport('${emp.id}','${from}','${to}')">🖨 Imprimir</button>
-          </div>
+          <button class="print-btn" onclick="printPayrollReport('${emp.id}','${from}','${to}',${q},'${brand}')">&#128424; Imprimir</button>
         </div>
         <div class="payroll-breakdown">
-          <div class="payroll-row"><span>Sueldo base</span><span>RD$${Number(emp.salary).toLocaleString('es-DO')}</span></div>
-          ${totalLateMin>0?`<div class="payroll-row"><span>Descuento llegadas tarde (${totalLateMin} min)</span><span class="deduction">-RD$${totalDiscLate.toFixed(0)}</span></div>`:''}
-          ${totalEarlyMin>0?`<div class="payroll-row"><span>Descuento salidas tempranas (${totalEarlyMin} min)</span><span class="deduction">-RD$${totalDiscEarly.toFixed(0)}</span></div>`:''}
-          ${absentDays>0?`<div class="payroll-row"><span>Descuento ausencias (${absentDays} día${absentDays>1?'s':''})</span><span class="deduction">-RD$${discAbsent.toFixed(0)}</span></div>`:''}
-          <div class="payroll-row"><span>Total descuentos</span><span class="deduction">-RD$${totalDiscount.toFixed(0)}</span></div>
-          <div class="payroll-row" style="padding-top:8px"><span>Neto a pagar</span><span style="color:var(--green);font-size:18px">RD$${netPay.toFixed(0)}</span></div>
+          <div class="payroll-row"><span style="color:var(--text2)">Sueldo mensual ${brandLabel}</span><span style="color:var(--text2)">RD$${fmt(salary)}</span></div>
+          <div class="payroll-row"><span>Pago quincenal (&divide;2)</span><span>RD$${fmt(sueldoQuincenal)}</span></div>
+          ${totalLateMin>0?`<div class="payroll-row"><span>Desc. tardanzas (${totalLateMin} min)</span><span class="deduction">-RD$${totalDiscLate.toFixed(0)}</span></div>`:''}
+          ${totalEarlyMin>0?`<div class="payroll-row"><span>Desc. salidas tempranas (${totalEarlyMin} min)</span><span class="deduction">-RD$${totalDiscEarly.toFixed(0)}</span></div>`:''}
+          ${absentDays>0?`<div class="payroll-row"><span>Desc. ausencias (${absentDays} d&iacute;a${absentDays>1?'s':''})</span><span class="deduction">-RD$${discAbsent.toFixed(0)}</span></div>`:''}
+          ${totalSanctions>0?`<div class="payroll-row"><span>Amonestaciones (no marcó)</span><span class="deduction">-RD$${totalSanctions.toFixed(0)}</span></div>`:''}
+          ${totalDiscount>0?`<div class="payroll-row"><span>Total descuentos</span><span class="deduction">-RD$${totalDiscount.toFixed(0)}</span></div>`:''}
+          <div class="payroll-row" style="padding-top:10px;border-top:2px solid var(--border);margin-top:6px">
+            <span style="font-size:15px;font-weight:600">Neto a pagar</span>
+            <span style="color:var(--green);font-size:22px;font-weight:700">RD$${fmt(netPay)}</span>
+          </div>
         </div>
-        ${records.length>0?`
+        ${unpardoned.filter(r=>(r.lateMin||0)+(r.earlyMin||0)+(r.absent?1:0)+(r.sanctionIn||0)+(r.sanctionOut||0)>0).length>0||pardoned.length>0?`
         <div class="payroll-discounts">
-          <div class="payroll-discounts-title">Detalle de descuentos por día</div>
-          ${pardoned.length>0?`
-          <div style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:12px">
-            <div style="color:#a78bfa;font-weight:600;margin-bottom:6px">&#10003; ${pardoned.length} dia(s) perdonado(s) con constancia</div>
-            ${pardoned.map(p=>`<div style="color:var(--text2);padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04)">
-              <span>${formatDate(p.date)}</span>
-              <span style="margin-left:8px;font-style:italic">"${(p.pardonReason||'').substring(0,60)}${(p.pardonReason||'').length>60?'...':''}"</span>
-            </div>`).join('')}
+          <div class="payroll-discounts-title">Detalle de descuentos</div>
+          ${pardoned.length>0?`<div style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:12px">
+            <div style="color:#a78bfa;font-weight:600;margin-bottom:6px">&#10003; ${pardoned.length} d&iacute;a(s) perdonado(s)</div>
+            ${pardoned.map(p=>`<div style="color:var(--text2);padding:3px 0">${formatDate(p.date)} &mdash; <em>${(p.pardonReason||'').substring(0,50)}</em></div>`).join('')}
           </div>`:''}
-          ${records.filter(r=>(r.lateMin||0)+(r.earlyMin||0)+(r.absent?1:0)>0&&!r.pardoned).map(r=>`
+          ${unpardoned.filter(r=>(r.lateMin||0)+(r.earlyMin||0)+(r.absent?1:0)+(r.sanctionIn||0)+(r.sanctionOut||0)>0).map(r=>`
             <div class="discount-item">
               <span>${formatDate(r.date)}</span>
               <span style="color:var(--text2)">
-                ${r.lateMin>0?`Tarde: ${r.lateMin}m · Entrada ${to12h(r.in)} (-RD$${(r.discountIn||0).toFixed(0)}) `:''}
-                ${r.earlyMin>0?`Sal. temp: ${r.earlyMin}m · Salida ${to12h(r.out)} (-RD$${(r.discountOut||0).toFixed(0)}) `:''}
-                ${r.absent?`Ausente (-RD$${(emp.salary/30).toFixed(0)})`:''}
+                ${brand==='arepa'&&r.lateMin>0?`Tarde ${r.lateMin}m &middot; ${to12h(r.in)} (<span style="color:var(--danger)">-RD$${(r.discountIn||0).toFixed(0)}</span>) `:''}
+                ${brand==='arepa'&&(!emp.salarySmash||r.exitBrand==='arepa')&&r.earlyMin>0?`Sal.temp ${r.earlyMin}m (<span style="color:var(--danger)">-RD$${(r.discountOut||0).toFixed(0)}</span>) `:''}
+                ${brand==='smash'&&r.exitBrand==='smash'&&r.earlyMin>0?`Sal.temp Smash ${r.earlyMin}m (<span style="color:var(--danger)">-RD$${(r.discountOut||0).toFixed(0)}</span>) `:''}
+                ${r.absent?`Ausente (<span style="color:var(--danger)">-RD$${(salary/30).toFixed(0)}</span>) `:''}
+                ${brand==='arepa'&&r.sanctionIn?`<span style="color:var(--danger)">Amonest. no marcó entrada -RD$${r.sanctionIn}</span> `:''}
+                ${brand==='smash'&&r.sanctionOut?`<span style="color:var(--danger)">Amonest. no marcó salida -RD$${r.sanctionOut}</span>`:''}
               </span>
-            </div>
-          `).join('')}
-          ${records.filter(r=>((r.lateMin||0)+(r.earlyMin||0)+(r.absent?1:0)>0)&&!r.pardoned).length===0?'<div class="discount-item" style="color:var(--green)">Sin descuentos este período</div>':''}
+            </div>`).join('')}
         </div>`:''}
-      </div>
-    `;
-  }).join('');
+      </div>`;
 }
+
 
 // ─────────────────────────────────────────────
 // PRINT (EPSON THERMAL)
 // ─────────────────────────────────────────────
-function printPayrollReport(empId, from, to) {
+function printPayrollReport(empId, from, to, q, brand) {
+  brand = brand || 'arepa';
   const emp = getEmployees().find(e=>e.id===empId);
+  const salary = brand === 'smash' ? (emp.salarySmash||0) : emp.salary;
+  const brandLabel = brand === 'smash' ? 'Smash Lovers' : 'Arepa Lovers';
   const att = getAttendance().filter(r=>r.empId===empId && r.date>=from && r.date<=to);
   const cfg = getConfig();
   const pardoned = att.filter(r=>r.pardoned);
@@ -1186,9 +1326,10 @@ function printPayrollReport(empId, from, to) {
   const absentDays = unpardoned.filter(r=>r.absent).length;
   const totalDiscLate = unpardoned.reduce((a,r)=>a+(r.discountIn||0),0);
   const totalDiscEarly = unpardoned.reduce((a,r)=>a+(r.discountOut||0),0);
-  const discAbsent = absentDays * (emp.salary/30);
+  const discAbsent = absentDays * (salary/30);
+  const sueldoQuincenal = salary / 2;
   const totalDiscount = totalDiscLate + totalDiscEarly + discAbsent;
-  const netPay = emp.salary - totalDiscount;
+  const netPay = Math.max(0, sueldoQuincenal - totalDiscount);
   const now = new Date().toLocaleString('es-DO');
   const sep = '================================';
   const sep2 = '--------------------------------';
@@ -1217,7 +1358,9 @@ function printPayrollReport(empId, from, to) {
     `Empleado: ${emp.name}`,
     `Cargo   : ${emp.role}`,
     `Período : ${formatDate(from)} al ${formatDate(to)}`,
-    `Sueldo  : RD$${Number(emp.salary).toFixed(2)}/mes`,
+    `Per\u00edodo : ${q===1?'1ra':'2da'} quincena`,
+    `Sueldo mensual : RD$${Number(emp.salary).toFixed(2)}`,
+    `Pago quincenal : RD$${sueldoQuincenal.toFixed(2)} (\u00f72)`,
     `Pago dia: RD$${(emp.salary/30).toFixed(2)} (÷30 dias)`,
     `Pago hr : RD$${(emp.salary/30/(cfg.workHours||8)).toFixed(2)} (÷${cfg.workHours||8}h)`,
     `Pago min: RD$${(emp.salary/30/(cfg.workHours||8)/60).toFixed(4)} (÷60min)`,
@@ -1241,6 +1384,7 @@ function printPayrollReport(empId, from, to) {
     sep2,
     row('TOTAL DESC.:', `-RD$${totalDiscount.toFixed(2)}`),
     row('NETO A PAGAR:', `RD$${netPay.toFixed(2)}`),
+    sep,
     sep,
     '',
     ...(discDetails?['DETALLE POR DIA:', sep2, discDetails, '']:[]),
@@ -1347,6 +1491,7 @@ window.addEventListener('load', function() {
   document.getElementById('att-date-from').value = firstDay;
   document.getElementById('att-date-to').value = todayStr;
 });
+
 </script>
 </body>
 </html>
